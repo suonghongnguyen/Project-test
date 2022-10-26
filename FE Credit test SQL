@@ -1,0 +1,101 @@
+-- TEST 1: 
+WITH o1 AS(
+SELECT OrderID, SUM(Revenue) AS revenue_order
+FROM Order_details
+GROUP BY OtderID),
+t1 AS (
+SELECT *
+FROM Orders AS o
+LEFT JOIN Custommer AS c  
+ON o.CustomerID = c.CustomerID
+LEFT JOIN o1
+ON o.OrderID = o1.OrderID),
+t2 AS (
+SELECT *, 
+CASE WHEN Month_ShippedDate = 2015-01 THEN revenue_order END AS OJ15, 
+CASE WHEN Month_ShippedDate = 2015-02 THEN revenue_order ID END AS OF15,
+CASE WHEN Month_ShippedDate = 2015-03 THEN revenue_order END AS OM15
+FROM t1),
+SELECT Region, SUM(OJ15) AS Jan’15, SUM (OF15) AS Feb’15,  SUM (OM15) AS Mar’15 
+FROM t2
+GROUP BY Region
+WHERE Region IN (“SaiGon”,“Eastern”)
+ORDER BY Region DESC 
+
+-- TEST 2: 
+
+WITH p1 AS (
+SELECT *, 
+CASE WHEN Productname = “Tuna” THEN “Fish”,
+WHEN Productname = “Beef” THEN “Meat”
+WHEN Productname = “Pork” THEN “Meat”,
+WHEN Productname = “Green bean” THEN “Bean”,
+WHEN Productname = “White bean” THEN “Bean”,
+WHEN Productname = “Tomato” THEN “Vegetable”,
+WHEN Productname = “Salad” THEN “Vegetable”,
+WHEN Productname = “Others” THEN “Orders”
+END AS Group
+FROM Product),
+t3 AS (
+SELECT *
+FROM Order_detail AS od
+LEFT JOIN Orders AS o
+ON od.OrderID = o.OrderID
+LEFT JOIN p1
+ON od.ProductID = p1.ProductID),
+t4 AS (
+	SELECT *,
+CASE WHEN Month_ShippedDate = 2015-01 THEN Revenue END AS OJ15, 
+CASE WHEN Month_ShippedDate = 2015-02 THEN Revenue END AS OF15,
+CASE WHEN Month_ShippedDate = 2015-03 THEN Revenue END AS OM15
+FROM t3)
+SELECT Group, SUM(OJ15) AS Jan’15, SUM (OF15) AS Feb’15,  SUM (OM15) AS Mar’15 
+FROM t4
+GROUP BY Group
+
+-- TEST 3:
+
+WITH o1 AS(
+SELECT OrderID, SUM(Revenue) AS revenue_order
+FROM Order_details
+GROUP BY OtderID),
+t1 AS (
+SELECT *
+FROM Orders AS o
+LEFT JOIN Custommer AS c  
+ON o.CustomerID = c.CustomerID
+LEFT JOIN o1
+ON o.OrderID = o1.OrderID),
+t5 AS (
+SELECT Month_ShippedDate as Month, CustomerID, CustomerName, SUM (revenue_order) AS Amount
+FROM t1
+WHERE Month IN (“2015-01”, “2015-02”, “2015-03”)
+GROUP BY Month, CustomerID),
+SELECT month, CustomerID, CustomerName, Amount,
+RANK() OVER(PARTITION BY Month ORDER BY Amount DESC) AS Rank
+FROM t5
+ORDER BY Month, Amount
+
+-- TEST 4:
+
+WITH t6 AS (
+SELECT od.OrderID, od.ProductID, UnitPrice, od.Quantity, Revenue, Month_ShippedDate as Month, ProductName
+FROM Order_detail AS od
+LEFT JOIN Orders AS o
+ON od.OrderID = o.OrderID
+LEFT JOIN product AS p
+ON od.ProductID = p.ProductID
+WHERE Month IN (“2015-01”, “2015-02”, “2015-03”) ),
+t7 AS ( 
+	SELECT Month, ProductID, ProductName, SUM(Quantity) AS SumQuantity
+	FROM t6
+	GROUP BY Month, ProductID),
+SELECT Month, ProductID, ProductName, SumQuantity
+	RANK() OVER(PARTITION BY Month ORDER BY SumQuantity ASC) AS Rank
+FROM t7
+ORDER BY Month, SumQuantity
+
+
+
+
+
